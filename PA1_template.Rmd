@@ -2,7 +2,7 @@
 
 
 ## Loading and preprocessing the data
-Load the data and look at it's structure:
+Load the data and look at its structure:
 
 ```{r}
 activity <- read.csv("activity.csv", header = TRUE)
