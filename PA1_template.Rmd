@@ -94,6 +94,7 @@ plot(filledTotalSteps$Date, filledTotalSteps$x, type="h", xlab="", ylab="Steps",
 
 The mean and median of steps taken for the imputed data set are calculated here: 
 ```{r}
+options("scipen"=100, "digits"=4) #Turn off scientific notation
 filledMeanSteps <- mean(filledTotalSteps$x)
 filledMedianSteps <- median(filledTotalSteps$x)
 diffMean <- ((filledMeanSteps-meanSteps)/meanSteps) * 100
