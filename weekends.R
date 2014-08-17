@@ -19,5 +19,5 @@ filledActivity$day.type <- as.factor(filledActivity$day.type)
 days <- aggregate(filledActivity$steps,list(filledActivity$interval,filledActivity$day.type), mean)
 names(days) <- c('interval','day.type','steps')
 
-xyplot(steps  ~ interval | day.type, data=weekday,  type='l', layout=c(1,2))
+xyplot(steps  ~ interval | day.type, data=days,  type='l', layout=c(1,2))
 

@@ -2,19 +2,134 @@
 
 
 ## Loading and preprocessing the data
+Load the data and look at it's structure:
 
+```{r}
+activity <- read.csv("activity.csv", header = TRUE)
+
+str(activity)
+
+```
+
+
+It's almost usable, but the date column has been turned into a factor. So let's fix that:
+
+```{r}
+activity$date <- as.Date(activity$date, format="%Y-%m-%d")
+
+str(activity)
+```
+
+
+
+Now it looks good.
 
 
 ## What is mean total number of steps taken per day?
 
+A historgram showing the total number of steps taken each day is produced by this code:
 
+```{r}
+totalSteps = aggregate(activity$steps, list(Date = activity$date), sum, na.rm=TRUE)
+
+par(mar=c(5,5,5,5))
+plot(totalSteps$Date, totalSteps$x, type="h", xlab="", ylab="Steps", main="Total Steps Per Day")
+```
+
+The mean and median are easily calculated: 
+```{r}
+meanSteps <- mean(totalSteps$x)
+medianSteps <- median(totalSteps$x)
+```
+
+The mean number of steps taken is **`r round(meanSteps,digits=2)`**, and the median number of steps taken is **`r medianSteps`**.
 
 ## What is the average daily activity pattern?
 
+The average number of steps taken over all days by interval, is produced by this code:
+
+```{r}
+stepsInterval <- aggregate(activity$steps, list(interval = activity$interval), mean, na.rm=TRUE)
+par(mar=c(5,5,5,5))
+plot(stepsInterval$interval, stepsInterval$x, type="l", xlab="5 minute Interval", ylab="Avg Steps", main="Mean Steps Per Interval")
+```
+
+
+The maximum steps taken over all days is calculated here:
+
+```{r}
+maxInterval <- stepsInterval[stepsInterval$x == max(stepsInterval$x),1]
+```
+
+The interval with the maximum number of steps is **`r maxInterval`**.
 
 
 ## Imputing missing values
 
+The number of missing values is calculated here:
+```{r}
+totalMissing <- sum(is.na(activity$steps))
+percentMissing <- mean(is.na(activity$steps)) * 100
+```
+There are a total of **`r totalMissing`** values. This represents **`r round(percentMissing,digits=2)`** percent of the total.
 
+I decided to use the mean steps taken per interval over all days to fill in the missing values. That is done with this code. It creates a dataframe of just the intervals with missing values, merges them with the mean values so that the steps column is filled, and finally merges with the original activity dataframe, replacing its NA values with the imputed values:
+```{r}
+stepsInterval <- aggregate(activity$steps, list(interval = activity$interval), mean, na.rm=TRUE)
+names(stepsInterval) = c('interval', 'steps')
+
+missing <- subset(activity,is.na(steps),select=c(date,interval))
+missing <- merge(missing, stepsInterval, by="interval")
+
+cleanedActivity <- subset(activity,!is.na(steps))
+filledActivity <- merge(cleanedActivity, missing, by=c('date','interval','steps'), all.x=TRUE, all.y=TRUE)
+
+```
+A histogram of the total number of steps taken each day with the imputed data is produced here:
+```{r}
+filledTotalSteps = aggregate(filledActivity$steps, list(Date = filledActivity$date), sum, na.rm=TRUE)
+par(mar=c(5,5,5,5))
+plot(filledTotalSteps$Date, filledTotalSteps$x, type="h", xlab="", ylab="Steps", main="Total Steps Per Day, NAs Estimated")
+```
+
+The mean and median of steps taken for the imputed data set are calculated here: 
+```{r}
+filledMeanSteps <- mean(filledTotalSteps$x)
+filledMedianSteps <- median(filledTotalSteps$x)
+diffMean <- ((filledMeanSteps-meanSteps)/meanSteps) * 100
+diffMedian <- ((filledMedianSteps-medianSteps)/medianSteps)*100
+```
+
+The mean in the original data set was **`r round(meanSteps,digits=2)`** and the median was **`r round(medianSteps,digits=2)`**. The mean for the imputed data set is **`r round(filledMeanSteps,digits=2)`** and the median is **`r round(filledMedianSteps,digits=2)`**. This is an increase of **`r round(diffMean,digits=2)`%** and **`r round(diffMedian,digits=2)`%** for the mean and median respectively.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+In order to compare activity on weekdays vs weekends, we have to create a factor column indicating the day type for each date. I wrote a simple function to do this.
+
+```{r}
+
+getDayType <- function(date) {
+  
+  dayName = weekdays(date)
+  if (dayName != 'Saturday' && dayName != 'Sunday') {
+    'weekday'
+  }
+  else {
+    'weekend'
+  }
+}
+
+filledActivity$day.type <- sapply(filledActivity$date, getDayType)
+filledActivity$day.type <- as.factor(filledActivity$day.type)
+
+```
+
+Now, we can plot the total steps per interval over all days for weekdays and for weekends to compare the activity levels:
+```{r}
+library(lattice)
+days <- aggregate(filledActivity$steps,list(filledActivity$interval,filledActivity$day.type), mean)
+names(days) <- c('interval','day.type','steps')
+
+xyplot(steps  ~ interval | day.type, data=days,  type='l', layout=c(1,2))
+```
+
+A noticable difference is that activity starts sooner on weekdays and peaks higher than it does on weekends.

@@ -26,5 +26,7 @@ plot(filledTotalSteps$Date, filledTotalSteps$x, type="h", xlab="", ylab="Steps",
 #Mean/Median steps per day to be used in markdown text
 filledMeanSteps <- mean(filledTotalSteps$x)
 filledMedianSteps <- median(filledTotalSteps$x)
+diffMean <- ((filledMeanSteps-meanSteps)/meanSteps) * 100
+diffMedian <- ((filledMedianSteps-medianSteps)/medianSteps)*100
 
 
